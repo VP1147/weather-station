@@ -1,23 +1,16 @@
 // Import required libraries
-#ifdef ESP32
-  #include <WiFi.h>
-  #include <ESPAsyncWebServer.h>
-#else
-  #include <Arduino.h>
-  #include <ESP8266WiFi.h>
-  #include <ESP8266HTTPClient.h>
-  #include <Hash.h>
-  #include <ESPAsyncTCP.h>
-  #include <ESPAsyncWebServer.h>
-#endif
-#include <SoftwareSerial.h>
 
-#include <DHT.h>
-#define DHTPIN D2
-#define DHTTYPE DHT11
+//#include <ESPAsyncWebServer.h>
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
 
-String ID = "ICAMPO246";        //wunderground weather station ID            
-String PASSWORD  = "ep99Fx3Q";   // wunderground weather station password   
+#define LM32 A0
+
+String ID = "ICAMPO246";          // wunderground weather station ID            
+String PASSWORD  = "ep99Fx3Q";    // wunderground weather station password   
 String wu_sha1 = "E0:2A:E3:39:87:EB:E5:C6:AD:34:D5:08:1C:5F:12:5C:5E:4D:2E:26";
 
 // Variables
@@ -36,11 +29,12 @@ const char* password = "@db10buster@";
 
 
 // Create AsyncWebServer object on port 80
-AsyncWebServer server(80);
+//AsyncWebServer server(80);
 
-DHT dht(DHTPIN, DHTTYPE);
 HTTPClient http;
+WiFiClient client;
 
+/*
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -132,24 +126,20 @@ String processor(const String& var){
   }
   return String();
 }
-
+*/
 void setup(){
   // Serial port for debugging purposes
   Serial.begin(115200);
-  Serial.println();
-  // Start DHT sensor
-  dht.begin();
-
   pinMode(D5, OUTPUT);
   digitalWrite(D5, LOW);
-  // Start ESP module
+
   Serial.print("Start Weather Station: ");
   Serial.println(ID);
   
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
 
-  // Route for root / web page
+  /* // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index_html, processor);
   });
@@ -164,20 +154,21 @@ void setup(){
   });
   // Start server
   server.begin();
+  */
 }
 
-void wunderground(String tempf, String humid) {
-  String cmd = "https://rtupdate.wunderground.com/weatherstation/updateweatherstation.php?ID=";
+void wunderground(String tempf) {
+  String cmd = "http://rtupdate.wunderground.com/weatherstation/updateweatherstation.php?ID=";
   cmd += ID;
   cmd += "&PASSWORD=";
   cmd += PASSWORD;
   cmd += "&tempf=";
   cmd += tempf;
-  cmd += "&humidity=";
-  cmd += humid;
+  //cmd += "&humidity=";
+  //cmd += humid;
   cmd += "&dateutc=now&action=updateraw";
   Serial.println(cmd);
-  http.begin(cmd, wu_sha1);
+  http.begin(client, cmd);
   int httpCode = http.GET();
   if(httpCode > 0) {
     Serial.println(httpCode);
@@ -192,14 +183,18 @@ void wunderground(String tempf, String humid) {
   http.end();
 }
 
+float ReadLM32(int port) {
+  float tension = (float(analogRead(port)) * 5) / 1023;
+  float temp = tension / 0.010; // 10 mV
+  return temp;
+}
 void loop(){
   if ((millis() - lastTime) > timerDelay) {
-    float t = dht.readTemperature();
-    float tf = dht.readTemperature(true);
-    float h = dht.readHumidity();
-    float i = dht.computeHeatIndex(t, h, false);
-    temp = t; tempf = tf; humid = h; hic = i;
-    wunderground(tempf, humid);
+    float t = ReadLM32(LM32);
+    float tf = (t * (9/5)) + 32;
+    //float h = 0;
+    temp = t; tempf = tf; //humid = h;
+    wunderground(tempf);
     lastTime = millis();
   }  
 }
