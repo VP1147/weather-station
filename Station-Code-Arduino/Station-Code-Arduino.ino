@@ -14,7 +14,7 @@ RTC_PCF8563 rtc;
 
 // If true, RTC captures and uses compilation time
 // Used if battery if off or switched
-bool time_capture = false;
+bool time_capture = true;
 
 volatile byte revolutions;
 float rpmilli;
@@ -129,6 +129,7 @@ float calc_average() {
     t2 = bmp.readTemperature(); t2_tot += t2;
     p = bmp.readPressure() / 100; p_tot += p;          // hPa
     vcc = analogRead(0)*4.09/1023.0*ReadVcc(); vcc_tot += float(vcc);
+    read_rtc();
 
     // calculate the revolutions per milli(second)
     rpmilli = ((float)revolutions)/(millis()-timeold);
