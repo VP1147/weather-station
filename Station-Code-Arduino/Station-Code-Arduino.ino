@@ -64,7 +64,8 @@ void rpm_fun()
 
 float read_am2320() {
   float t, h;
-  am2320.readTemperatureAndHumidity(&t, &h);
+  t = am2320.readTemperature();
+  h = am2320.readHumidity();
   return t, h;
 }
 
@@ -125,7 +126,8 @@ float calc_average() {
   int n=0; 
   for(int i=0; i<period; i+=interval) {
     // Read data from each sensor
-    am2320.readTemperatureAndHumidity(&t1, &h); t1_tot += float(t1); h_tot += float(h);
+    t1 = am2320.readTemperature();
+    h = am2320.readHumidity(); t1_tot += float(t1); h_tot += float(h);
     t2 = bmp.readTemperature(); t2_tot += t2;
     p = bmp.readPressure() / 100; p_tot += p;          // hPa
     vcc = analogRead(0)*4.09/1023.0*ReadVcc(); vcc_tot += float(vcc);
