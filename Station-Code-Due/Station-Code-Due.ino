@@ -117,8 +117,7 @@ void loop() {
   Serial.println();
 
   float tf = (t1 * (9/5)) + 32;
-  String tempf = String(t1);
-  String humidity = String(h); String pressure = String(p / 33.86);
+  String tempf = String(tf); String humidity = String(h); String pressure = String(p_inhg);
   Serial.println(">> Sending data to server...");
   wu_update(tempf, humidity, pressure);
   Serial.println();
@@ -130,19 +129,6 @@ void rpm_fun()
 {
     revolutions++;
 }
-
-float read_am2320() {
-  float t, h;
-  am2320.readTemperatureAndHumidity(&t, &h);
-  return t, h;
-}
-
-float read_bmp180() {
-  float t = bmp.readTemperature();
-  float p = bmp.readPressure();
-  return t, p;
-}
-
 
 void wu_update(String tempf, String humid, String pressure) {
   String cmd = "ID=";
